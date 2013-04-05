@@ -56,17 +56,57 @@
     (define-key map (kbd "C-c p a") 'projekt-add-file)
     (define-key map (kbd "C-c p e") 'projekt-edit-list)
 
-    ;; Menu
+    ;; Menu in reverse order
     (define-key map [menu-bar projekt]
       (cons "Projekt" (make-sparse-keymap "Projekt")))
 
-    (define-key map [menu-bar projekt add-file]
-      '(menu-item "Add current file to commit list" projekt-add-file))
+    (define-key map [menu-bar projekt commit-0]
+      '(menu-item "--single-dashed-line"))
 
     (define-key map [menu-bar projekt edit-list]
       '(menu-item "Edit commit list" projekt-edit-list))
 
+    (define-key map [menu-bar projekt add-file]
+      '(menu-item "Add current file to commit list" projekt-add-file))
+
     map))
+
+(defun projekt-update-menu ()
+  "Update the menu to add entries for the current commit files"
+  (let* ((prj (projekt-get buffer-file-name))
+         (root (plist-get (cdr prj) :dir))
+         (commit (plist-get (cdr prj) :commit))
+         (file (expand-file-name (file-truename (buffer-file-name))))
+         (map (lookup-key projekt-mode-map [menu-bar projekt])))
+    (save-current-buffer
+      (let ((buf (if (bufferp commit)
+                     buf
+                   (find-file-noselect commit)))
+            (new-menu)
+            (n 0))
+        (set-buffer buf)
+        (goto-char (point-min))
+        (while (re-search-forward "^\\([^\n]+\\)\n" nil t)
+          (let ((file (buffer-substring (match-beginning 1)
+                                        (match-end 1))))
+            (incf n)
+            (message file)
+            (define-key-after map
+              (vector (intern (format "commit-%d" n)))
+              `(menu-item ,file (projekt-edit-file ,file))
+              'commit-0)))
+        projekt-mode-map))))
+
+(defun projekt-clean-menu ()
+  "Remove the commit files from the menu"
+  (let ((map (cdr (lookup-key projekt-mode-map [menu-bar projekt]))))
+    ;; cdr until commit-0
+    (while (and map (not (equal 'commit-0 (caar map))))
+      (setq map (cdr map)))
+    ;; cut off after commit-0
+    (when (and map (equal 'commit-0 (caar map)))
+      (rplacd map nil))
+    projekt-mode-map))
 
 (define-minor-mode projekt-mode
     "Toggle projekt mode.
@@ -92,6 +132,7 @@ and add files or edit it."
 (defun projekt-hook ()
   (when (and buffer-file-name (projekt-get buffer-file-name))
     (projekt-mode t)))
+
 (add-hook 'find-file-hook 'projekt-hook)
 
 (defun projekt-get (file)
