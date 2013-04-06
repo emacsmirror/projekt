@@ -35,8 +35,7 @@
 ;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; DESCRIPTION
-;; This package implements the Growl Notification Protocol GNTP
-;; described at http://www.growlforwindows.com/gfw/help/gntp.aspx
+;; TODO
 
 ;; Ideas
 ;; - Add list of files  in commit to menu (with function
@@ -212,17 +211,37 @@ and add files or edit it."
   (setq projekt-comment-buf (generate-new-buffer "cvs commit comment"))
   (switch-to-buffer projekt-comment-buf))
 
+(defun projekt/commit (&optional prj)
+  (plist-get (cdr (if prj prj (projekt-get))) :commit))
+
+(defun projekt/dir (&optional prj)
+  (plist-get (cdr (if prj prj (projekt-get))) :dir))
+
+(defun projekt-get-commmit ()
+  "Return the commit buffer, open when necessary."
+  (let* ((prj (projekt-get))
+         (commit (projekt/commit prj)))
+    (if (bufferp commit)
+        commit
+      (find-file-noselect commit))))
+
 (defun projekt-cvs-commit ()
+  "Take buffer content and use it as commit comment"
   (let ((comment (buffer-string))
-        (root (projekt-find-root))
-        (buf nil)
-        (files nil))
-    (setq buf (find-file-noselect (concat root "commit")))
+        (prj (projekt-get))
+        (buf (projekt/commit prj))
+        (root (projekt/dir prj))
+        files)
     (set-buffer buf)
-    (setq files (buffer-string))
-    (setq files (replace-regexp-in-string "\n" " " files))
-    (setq files (replace-regexp-in-string "^ *" "" files))
-    (setq files (replace-regexp-in-string " *$" "" files))
+
+    (goto-char (point-min))
+    (while (re-search-forward "^ *\\([^()\n]*[^()\n ]\\) *\n" nil t)
+      (let ((file (buffer-substring-no-properties
+                   (match-beginning 1) (match-end 1))))
+        (setq file (shell-quote-argument file))
+        (setq files (cons file files))))
+    (setq files (mapconcat 'identity files " "))
+
     (setq comment (replace-regexp-in-string "\\\\" "\\\\\\\\" comment))
     (setq comment (replace-regexp-in-string "\"" "\\\\\"" comment))
     (cd-absolute root)
