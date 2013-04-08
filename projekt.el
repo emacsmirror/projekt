@@ -107,6 +107,7 @@
       (rplacd map nil))
     projekt-mode-map))
 
+;;;###autoload
 (define-minor-mode projekt-mode
     "Toggle projekt mode.
 Interactively with no argument, this command toggles the mode.
@@ -133,6 +134,14 @@ and add files or edit it."
     (projekt-mode t)))
 
 (add-hook 'find-file-hook 'projekt-hook)
+
+(defun projekt-menu-hook ()
+  "Update the commit list in the menu"
+  (when projekt-mode
+    (projekt-clean-menu)
+    (projekt-update-menu)))
+
+(add-hook 'menu-bar-update-hook 'projekt-menu-hook)
 
 (defun projekt-get (file)
   (when (projekt-find-root)
@@ -263,3 +272,5 @@ and add files or edit it."
 (defun projekt-buffer-file ()
   (string-match ".*/" (buffer-file-name))
   (substring (buffer-file-name) (match-end 0)))
+
+(provide 'projekt)
