@@ -72,7 +72,7 @@
 
 (defun projekt-update-menu ()
   "Update the menu to add entries for the current commit files"
-  (let* ((prj (projekt-get buffer-file-name))
+  (let* ((prj (projekt-get))
          (root (plist-get (cdr prj) :dir))
          (commit (plist-get (cdr prj) :commit))
          (file (expand-file-name (file-truename (buffer-file-name))))
@@ -92,7 +92,7 @@
             (message file)
             (define-key-after map
               (vector (intern (format "commit-%d" n)))
-              `(menu-item ,file (projekt-edit-file ,file))
+              `(menu-item ,file (lambda () (interactive) (projekt-edit-file ,file)))
               'commit-0)))
         projekt-mode-map))))
 
@@ -130,7 +130,7 @@ and add files or edit it."
 
 
 (defun projekt-hook ()
-  (when (and buffer-file-name (projekt-get buffer-file-name))
+  (when (and buffer-file-name (projekt-get))
     (projekt-mode t)))
 
 (add-hook 'find-file-hook 'projekt-hook)
@@ -143,7 +143,11 @@ and add files or edit it."
 
 (add-hook 'menu-bar-update-hook 'projekt-menu-hook)
 
-(defun projekt-get (file)
+
+(defun projekt-edit-file (file)
+  (find-file (concat (projekt/dir) file)))
+
+(defun projekt-get ()
   (when (projekt-find-root)
     (let* ((root (projekt-find-root))
            (name (file-name-nondirectory (directory-file-name root)))
@@ -181,7 +185,7 @@ and add files or edit it."
 (defun projekt-add-file ()
   "Add current file to commit list"
   (interactive)
-  (let* ((prj (projekt-get buffer-file-name))
+  (let* ((prj (projekt-get))
          (root (plist-get (cdr prj) :dir))
          (commit (plist-get (cdr prj) :commit))
          (file (expand-file-name (file-truename (buffer-file-name)))))
