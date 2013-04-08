@@ -47,6 +47,10 @@
 ;; - keep patch/rev stuff
 ;; - use vc instead of straight cvs
 ;; - parse .project for more data?
+;; TODO
+;; - only update menu after projekt-add-file or edit/save
+;; - sort commit list
+;; - never add a file twice
 
 (defvar projekt-mode-map
   (let ((map (make-sparse-keymap)))
@@ -84,16 +88,17 @@
             (new-menu)
             (n 0))
         (set-buffer buf)
-        (goto-char (point-min))
-        (while (re-search-forward "^\\([^\n]+\\)\n" nil t)
-          (let ((file (buffer-substring (match-beginning 1)
-                                        (match-end 1))))
-            (incf n)
-            (message file)
-            (define-key-after map
-              (vector (intern (format "commit-%d" n)))
-              `(menu-item ,file (lambda () (interactive) (projekt-edit-file ,file)))
-              'commit-0)))
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward "^\\([^\n]+\\)\n" nil t)
+            (let ((file (buffer-substring (match-beginning 1)
+                                          (match-end 1))))
+              (incf n)
+              (message file)
+              (define-key-after map
+                  (vector (intern (format "commit-%d" n)))
+                `(menu-item ,file (lambda () (interactive) (projekt-edit-file ,file)))
+                'commit-0))))
         projekt-mode-map))))
 
 (defun projekt-clean-menu ()
@@ -194,9 +199,11 @@ and add files or edit it."
                      buf
                    (find-file-noselect commit))))
         (set-buffer buf)
-        (goto-char (point-max))
-        (when (not (looking-at ?\n))
+        (goto-char (- (point-max) 1))
+        (when (not (looking-at "\n"))
+          (goto-char (point-max))
           (insert ?\n))
+        (goto-char (point-max))
         (insert (substring file (length root)))
         (insert ?\n)
         (save-buffer buf)))))
