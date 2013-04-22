@@ -49,6 +49,7 @@
 ;; - parse .project for more data?
 ;; TODO
 ;; - only update menu after projekt-add-file or edit/save
+;; - update menu on buffer/project switch
 ;; - sort commit list
 ;; - never add a file twice
 
@@ -57,7 +58,9 @@
 
     ;; Keybindings
     (define-key map (kbd "C-c p a") 'projekt-add-file)
+    (define-key map (kbd "H-a") 'projekt-add-file)
     (define-key map (kbd "C-c p e") 'projekt-edit-list)
+    (define-key map (kbd "H-e") 'projekt-edit-list)
 
     ;; Menu in reverse order
     (define-key map [menu-bar projekt]
@@ -206,7 +209,8 @@ and add files or edit it."
         (goto-char (point-max))
         (insert (substring file (length root)))
         (insert ?\n)
-        (save-buffer buf)))))
+        (save-buffer buf)))
+    (projekt-update-menu)))
 
 (defun projekt-edit-list ()
   "Edit the commit list"
