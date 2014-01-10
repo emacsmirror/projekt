@@ -1,5 +1,4 @@
-;;; -*- lexical-binding: t -*-
-;;; projekt.el --- some kind of staging for CSV
+;;; projekt.el --- some kind of staging for CSV -*- lexical-binding: t -*-
 
 ;; Author: Engelke Eschner <tekai@gmx.li>
 ;; Version: 0.1
@@ -34,6 +33,7 @@
 ;; (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 ;; OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+;;; Commentary:
 ;; DESCRIPTION
 ;; TODO
 
@@ -53,6 +53,7 @@
 ;; - sort commit list
 ;; - never add a file twice
 
+;;; Code:
 (defvar projekt-mode-map
   (let ((map (make-sparse-keymap)))
 
@@ -78,11 +79,10 @@
     map))
 
 (defun projekt-update-menu ()
-  "Update the menu to add entries for the current commit files"
+  "Update the menu to add entries for the current commit files."
   (let* ((prj (projekt-get))
          (root (plist-get (cdr prj) :dir))
          (commit (plist-get (cdr prj) :commit))
-         (file (expand-file-name (file-truename (buffer-file-name))))
          (map (lookup-key projekt-mode-map [menu-bar projekt])))
     (save-current-buffer
       (let ((buf (if (bufferp commit)
@@ -105,7 +105,7 @@
         projekt-mode-map))))
 
 (defun projekt-clean-menu ()
-  "Remove the commit files from the menu"
+  "Remove the commit files from the menu."
   (let ((map (cdr (lookup-key projekt-mode-map [menu-bar projekt]))))
     ;; cdr until commit-0
     (while (and map (not (equal 'commit-0 (caar map))))
@@ -133,18 +133,19 @@ and add files or edit it."
   projekt-mode-map
   :group 'projekt)
 
-(defvar projekts-list nil "keeps a list of open projects")
+(defvar projekts-list nil "Keeps a list of open projects.")
 ; '((<tld> :dir "/path/to/project" :commit "commit-file-name OR buffer")))
 
 
 (defun projekt-hook ()
+  "Hook to start projekt mode."
   (when (and buffer-file-name (projekt-get))
     (projekt-mode t)))
 
 (add-hook 'find-file-hook 'projekt-hook)
 
 (defun projekt-menu-hook ()
-  "Update the commit list in the menu"
+  "Update the commit list in the menu."
   (when projekt-mode
     (projekt-clean-menu)
     (projekt-update-menu)))
@@ -153,9 +154,11 @@ and add files or edit it."
 
 
 (defun projekt-edit-file (file)
+  "Open FILE in current project."
   (find-file (concat (projekt/dir) file)))
 
 (defun projekt-get ()
+  "Get data for the current project."
   (when (projekt-find-root)
     (let* ((root (projekt-find-root))
            (name (file-name-nondirectory (directory-file-name root)))
@@ -166,7 +169,7 @@ and add files or edit it."
       prj)))
 
 (defun projekt-file-p ()
-  "Checks if the file associated with the current buffer is in a project"
+  "Check if the file associated with the current buffer is in a project."
   (when buffer-file-name
     (let (projekt-root)
       (dolist (prj projekts-list)
@@ -177,9 +180,10 @@ and add files or edit it."
           prj)))))
 
 (defvar projekt-comment-buf nil
-  "Buffer zum kommentieren eines Commits")
+  "Buffer for commenting a commit.")
 
 (defun projekt-find-root ()
+  "Find the root path of a project."
   (let ((max-depth 10)
         (depth 0)
         (file ".project"))
@@ -191,7 +195,7 @@ and add files or edit it."
       (expand-file-name (substring (file-truename file) 0 -8)))))
 
 (defun projekt-add-file ()
-  "Add current file to commit list"
+  "Add current file to commit list."
   (interactive)
   (let* ((prj (projekt-get))
          (root (plist-get (cdr prj) :dir))
@@ -213,7 +217,7 @@ and add files or edit it."
     (projekt-update-menu)))
 
 (defun projekt-edit-list ()
-  "Edit the commit list"
+  "Edit the commit list."
   (interactive)
   (let* ((root (projekt-find-root))
          (commit (concat root "commit")))
@@ -221,7 +225,7 @@ and add files or edit it."
       (find-file commit))))
 
 (defun projekt-commit ()
-  "open commit list then commit files in list"
+  "Open commit list then commit files in list."
   (interactive)
   (if (eq (current-buffer) projekt-comment-buf)
       (projekt-cvs-commit)
@@ -288,4 +292,40 @@ and add files or edit it."
   (string-match ".*/" (buffer-file-name))
   (substring (buffer-file-name) (match-end 0)))
 
+(defun projekt-commit-list ()
+  (let* ((prj (projekt-get))
+         (root (plist-get (cdr prj) :dir))
+         (commit (plist-get (cdr prj) :commit))
+         list)
+    (save-current-buffer
+      (let ((buf (if (bufferp commit)
+                     buf
+                   (find-file-noselect commit))))
+        (set-buffer buf)
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward "^\\([^\n]+\\)\n" nil t)
+            (let ((file (buffer-substring (match-beginning 1)
+                                          (match-end 1))))
+              (setq list (cons file list)))))))
+    list))
+
+(defun projekt-diff ()
+  "Show diffs of all files to be committed."
+  (interactive)
+  (let ((files (projekt-commit-list))
+        (diff-buffer (get-buffer-create "*projekt diff*")))
+    (when (not (null files))
+      (setq default-directory (projekt/dir))
+      (shell-command
+       (concat "cvs diff "
+               (mapconcat 'identity diff-switches " ")
+               " "
+               (mapconcat 'identity files " "))
+       diff-buffer)
+      (set-buffer diff-buffer)
+      (diff-mode)
+      (setq buffer-read-only 1))))
+
 (provide 'projekt)
+;;; projekt.el ends here
