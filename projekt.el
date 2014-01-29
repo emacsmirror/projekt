@@ -1,4 +1,4 @@
-;;; projekt.el --- some kind of staging for CSV -*- lexical-binding: t -*-
+;;; projekt.el --- some kind of staging for CVS -*- lexical-binding: t -*-
 
 ;; Author: Engelke Eschner <tekai@gmx.li>
 ;; Version: 0.1
