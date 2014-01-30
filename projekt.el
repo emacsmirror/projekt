@@ -314,16 +314,18 @@ and add files or edit it."
   "Show diffs of all files to be committed."
   (interactive)
   (let ((files (projekt-commit-list))
-        (diff-buffer (get-buffer-create "*projekt diff*")))
+        (diff-buffer (get-buffer-create "*projekt diff*"))
+        (proj-dir (projekt/dir)))
     (when (not (null files))
-      (setq default-directory (projekt/dir))
+      (setq files (sort files 'string-lessp))
+      (set-buffer diff-buffer)
+      (setq default-directory proj-dir)
       (shell-command
        (concat "cvs diff "
                (mapconcat 'identity diff-switches " ")
                " "
                (mapconcat 'identity files " "))
        diff-buffer)
-      (set-buffer diff-buffer)
       (diff-mode)
       (setq buffer-read-only 1))))
 
