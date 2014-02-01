@@ -2,6 +2,7 @@
 
 ;; Author: Engelke Eschner <tekai@gmx.li>
 ;; Version: 0.1
+;; Package-Requires: ((emacs "24"))
 ;; Created: 2013-04-04
 
 ;; LICENSE
