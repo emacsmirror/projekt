@@ -185,15 +185,9 @@ and add files or edit it."
 
 (defun projekt-find-root ()
   "Find the root path of a project."
-  (let ((max-depth 10)
-        (depth 0)
-        (file ".project"))
-    (while (and (< depth max-depth)
-                (not (file-exists-p file)))
-      (setq file (concat "../" file))
-      (setq depth (+ depth 1)))
-    (when (file-exists-p file)
-      (expand-file-name (substring (file-truename file) 0 -8)))))
+  (let ((root (locate-dominating-file default-directory ".project")))
+    (when root
+      (expand-file-name (file-truename root)))))
 
 (defun projekt-add-file ()
   "Add current file to commit list."
