@@ -307,7 +307,9 @@ and add files or edit it."
   (interactive)
   (let ((files (projekt-commit-list))
         (diff-buffer (get-buffer-create "*projekt diff*"))
-        (proj-dir (projekt/dir)))
+        (proj-dir (projekt/dir))
+        ;; HACK prevent outbut in echo area by shell-command
+        (max-mini-window-height 0))
     (when (not (null files))
       (setq files (sort files 'string-lessp))
       (set-buffer diff-buffer)
@@ -319,7 +321,8 @@ and add files or edit it."
                (mapconcat 'identity files " "))
        diff-buffer)
       (diff-mode)
-      (setq buffer-read-only 1))))
+      (setq buffer-read-only 1)
+      (pop-to-buffer diff-buffer 'other-window))))
 
 (provide 'projekt)
 ;;; projekt.el ends here
