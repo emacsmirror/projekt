@@ -140,7 +140,8 @@ and add files or edit it."
 (defun projekt-hook ()
   "Hook to start projekt mode."
   (when (and buffer-file-name (projekt-get))
-    (projekt-mode t)))
+    (projekt-mode t)
+    (add-hook 'menu-bar-update-hook 'projekt-menu-hook nil t)))
 
 (add-hook 'find-file-hook 'projekt-hook)
 
@@ -149,9 +150,6 @@ and add files or edit it."
   (when projekt-mode
     (projekt-clean-menu)
     (projekt-update-menu)))
-
-(add-hook 'menu-bar-update-hook 'projekt-menu-hook)
-
 
 (defun projekt-edit-file (file)
   "Open FILE in current project."
