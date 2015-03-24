@@ -60,9 +60,8 @@
 
     ;; Keybindings
     (define-key map (kbd "C-c p a") 'projekt-add-file)
-    (define-key map (kbd "H-a") 'projekt-add-file)
     (define-key map (kbd "C-c p e") 'projekt-edit-list)
-    (define-key map (kbd "H-e") 'projekt-edit-list)
+    (define-key map (kbd "C-c p d") 'projekt-diff)
 
     ;; Menu in reverse order
     (define-key map [menu-bar projekt]
